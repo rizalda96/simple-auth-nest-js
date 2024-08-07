@@ -12,7 +12,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, { cors: true });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
-  const configService = app.get(ConfigService<AllConfigType>);
+  const configService = app.get(ConfigService<AllConfigType>);  
 
   app.setGlobalPrefix(
     configService.getOrThrow('app.apiPrefix', { infer: true }),
@@ -32,6 +32,7 @@ async function bootstrap() {
 
 
   await app.listen(configService.getOrThrow('app.port', { infer: true }));
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();
 
