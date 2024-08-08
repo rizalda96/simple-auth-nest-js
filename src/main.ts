@@ -2,10 +2,11 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './exceptions/all-exceptions.filter';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
-import { useContainer } from 'class-validator';
+import { useContainer, ValidationError } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from './config/config.type';
-import { VersioningType } from '@nestjs/common';
+import { BadRequestException, ValidationPipe, VersioningType } from '@nestjs/common';
+import { DtoValidationError } from './exceptions/dto-exception.filter';
 
 async function bootstrap() {
   // const app = await NestFactory.create(AppModule);
@@ -24,9 +25,17 @@ async function bootstrap() {
     type: VersioningType.URI,
   });
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      exceptionFactory: (validationErrors: ValidationError[]) => new DtoValidationError(validationErrors),
+    })
+  )
 
   const httpAdapter = app.get(HttpAdapterHost);  
-  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter, configService));
 
   app.useGlobalInterceptors(new ResponseInterceptor());
 
